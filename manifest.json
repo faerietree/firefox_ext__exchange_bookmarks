@@ -9,6 +9,7 @@
     "scripts": ["background.js"]
   },
   "browser_action": {
+    "browser_style": true,
     "default_icon": "icons/star-empty-38.png",
     "default_title": "Exchange bookmarks!"
   },

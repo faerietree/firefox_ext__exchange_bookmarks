@@ -2,8 +2,20 @@ var ghostifyBookmarks; ghostifyBookmarks = [undefined, undefined];
 var currentTab;
 var isHidden;
 
-var urlsToGhostify; urlsToGhostify = [ "http://burgauwka.duckdns.org:8011/control/userimage.html", "http://burgauwka.duckdns.org:8012/control/userimage.html" ];
-var urlGhosts; urlGhosts = [ "http://burgauwka.duckdns.org:8014/control/userimage.html", "http://burgauwka.duckdns.org:8015/control/userimage.html" ];
+var urlsToGhostify; urlsToGhostify = []; // TODO distinguish promise not fulfilled/arrived yet (undefined) and empty. 
+var urlGhosts; urlGhosts = [];
+
+function onError(error) // TODO Reuse in options.js using browser.extension.getBackgroundPage().onError.
+{
+  console.log(`Error: ${error}`);
+}
+
+// request and hopefully get the options:
+var gettingOptions = browser.storage.local.get("urlsToGhostify");
+gettingOptions.then(function(item) { urlsToGhostify = item.urlsToGhostify.split(/\s+/); } , onError);
+
+gettingOptions = browser.storage.local.get("urlGhosts");
+gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
 
 
 /*
@@ -27,7 +39,13 @@ function updateIcon() {
  * Toggle the bookmark on the current page.
  */
 function toggleBookmark() {
-  
+  if (urlsToGhostify.length < 1 || urlGhosts.length < 1)
+  {
+    console.log('No options loaded yet or are empty.');
+    browser.runtime.openOptionsPage();
+    return;
+  }
+
   for (var index = 0; index < ghostifyBookmarks.length; ++index) {
     var bookmark = ghostifyBookmarks[index];
     var urlToGhostify = urlsToGhostify[index];

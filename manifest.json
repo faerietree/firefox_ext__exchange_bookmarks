@@ -1,30 +1,33 @@
 {
+  "applications": {
+    "gecko": {
+      "id": "exchange_bookmarks@ciry.at",
+      "strict_min_version": "47.0"
+    }
+  },
   "background": {
     "scripts": ["background.js"]
   },
   "browser_action": {
     "default_icon": "icons/star-empty-38.png",
-    "default_title": "Ghostify bookmarks!"
+    "default_title": "Exchange bookmarks!"
   },
-  "description": "Button for directing selected bookmarks into void.",
-  "homepage_url": "https://github.com/faerietree/firefox_ext__ghostify_bookmarks",
+  "description": "Button for exchanging selected bookmarks.",
+  "homepage_url": "https://github.com/faerietree/firefox_ext__exchange_bookmarks",
   "icons": {
     "16": "icons/void-16.png",
      "48": "icons/void-48.png",
      "128": "icons/void-128.png"
   },
   "manifest_version": 2,
-  "name": "ghostifyBookmark",
+  "name": "exchange_bookmarks",
+  "options_ui": {
+    "page": "options/options.html"
+  },
   "permissions": [
     "bookmarks",
+    "storage",
     "tabs"
   ],
-  "version": "1.0",
-  "applications": {
-    "gecko": {
-      "id": "ghostifyBookmarks@ciry.at",
-      "strict_min_version": "44.0",
-      "mozilla_requires_https_update_url": "http://github.com/faerietree/firefox_ext__ghostify_bookmarks/blob/master/update.json"
-    }
-  }
+  "version": "1.0"
 }

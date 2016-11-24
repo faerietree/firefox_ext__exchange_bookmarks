@@ -25,7 +25,7 @@ gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.u
 function updateIcon() {
   browser.browserAction.setIcon({
     path: ghostifyBookmarks[0] && ghostifyBookmarks[1] && isHidden ? {
-      19: "icons/bookmark-it.png",
+      19: "icons/star-filled-19.png",
       38: "icons/star-filled-38.png"
     } : {
       19: "icons/star-empty-19.png",

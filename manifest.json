@@ -1,7 +1,7 @@
 {
   "applications": {
     "gecko": {
-      "id": "exchange_bookmarks@ciry.at",
+      "id": "ghostifyBookmarks@ciry.at",
       "strict_min_version": "47.0"
     }
   },
@@ -30,5 +30,5 @@
     "storage",
     "tabs"
   ],
-  "version": "1.0"
+  "version": "2.0"
 }

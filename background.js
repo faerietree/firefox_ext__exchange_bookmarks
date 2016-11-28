@@ -20,14 +20,15 @@ function init()
 	gettingOptions = browser.storage.local.get("urlGhosts");
 	gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
 
-	updateActiveTab();
+	updateGhostifyBookmarks();
 }
 
 /*
  * Updates the browserAction icon to reflect whether the current page
  * is already bookmarked.
  */
-function updateIcon() {
+function updateIcon()
+{
   browser.browserAction.setIcon({
     path: ghostifyBookmarks[0] && ghostifyBookmarks[1] && isHidden ? {
       19: "icons/star-filled-19.png",
@@ -35,15 +36,16 @@ function updateIcon() {
     } : {
       19: "icons/star-empty-19.png",
       38: "icons/star-empty-38.png"
-    },
-    tabId: currentTab.id
+    }
+    //,tabId: currentTab.id
   });
 }
 
 /*
  * Toggle the bookmark on the current page.
  */
-function toggleBookmark() {
+function toggleBookmark()
+{
 
   init();
 
@@ -54,14 +56,15 @@ function toggleBookmark() {
     return;
   }
 
-  for (var index = 0; index < ghostifyBookmarks.length; ++index) {
+  for (var index = 0; index < ghostifyBookmarks.length; ++index)
+  {
     var bookmark = ghostifyBookmarks[index];
     var urlToGhostify = urlsToGhostify[index];
     var urlGhost = urlGhosts[index];
     if (!bookmark)
     {
         console.log("Error: No bookmark loaded: " + bookmark + "ghostifyBookmarks: " + ghostifyBookmarks + " . Loading (again) ...");
-        updateActiveTab();
+        updateGhostifyBookmarks();
     }
     if (bookmark.url != urlToGhostify)
     {
@@ -70,9 +73,11 @@ function toggleBookmark() {
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
           isHidden = false;
-          updateActiveTab();
+          updateGhostifyBookmarks();
         });
-    } else {
+    }
+ 	else
+	{
         //var creating = browser.bookmarks.create({title: currentTab.title, url: currentTab.url});
         //creating.then(function(bookmark) {
         //  currentBookmark = bookmark;
@@ -82,7 +87,7 @@ function toggleBookmark() {
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
           isHidden = true;
-          updateActiveTab();
+          updateGhostifyBookmarks();
         });
     }
   }
@@ -94,13 +99,11 @@ browser.browserAction.onClicked.addListener(toggleBookmark);
 
 
 /*
- * Switches currentTab and currentBookmark to reflect the currently active tab
+ * Update ghostifyBookmarks to prevent invalid URL data because the URLs have been swapped. 
  */
-function updateActiveTab(tabs) {
+function updateGhostifyBookmarks()
+{
 
-  function updateTab(tabs) {
-    if (tabs[0]) {
-      currentTab = tabs[0];
       // no ghosts:
       var searching = browser.bookmarks.search({url: urlsToGhostify[0]});
       searching.then((bookmarks) => {
@@ -135,64 +138,12 @@ function updateActiveTab(tabs) {
         isHidden = true;
         updateIcon();
       });
-    }
-  }
-  /*
-  function loadGhostifyBookmarkGhosts(tabs)
-  {
-    for (var index = 0; index < urlsToGhostify.length; ++index) {
-        var bookmark = ghostifyBookmarks[index];
-        var urlToGhostify = urlsToGhostify[index];
-        var urlGhost = urlGhosts[index];
-        if (!bookmark)
-        {
-            var searching = browser.bookmarks.search({url: urlGhost});
-            searching.then((bookmarks) => {
-                ghostifyBookmarks[index] = bookmarks[0];
-                updateIcon(); // TODO Update ghostifyBookmarksLoadedIcon
-            });
-        }
-    }
-  }
-  function loadGhostifyBookmarks(tabs)
-  {
-    for (var index = 0; index < urlGhosts.length; ++index) {
-        var bookmark = ghostifyBookmarks[index];
-        var urlToGhostify = urlsToGhostify[index];
-        var urlGhost = urlGhosts[index];
-        if (!bookmark)
-        {
-            var searching = browser.bookmarks.search({url: urlToGhostify});
-            searching.then((bookmarks) => {
-                console.log("bookmarks found count: " + bookmarks.length);
-                if (bookmarks[0])
-                {
-                    ghostifyBookmarks[index] = bookmarks[0];
-                }
-                else
-                {
-                    loadGhostifyBookmarkGhosts(tabs);
-                }
-                updateIcon(); // TODO Update ghostifyBookmarksLoadedIcon
-            });
-        }
-    }
-  }
-  */
-  var gettingActiveTab = browser.tabs.query({active: true, currentWindow: true});
-  //gettingActiveTab.then(updateTab).then(loadGhostifyBookmarks).then(loadGhostifyBookmarkGhosts);
-  gettingActiveTab.then(updateTab);
-}
 
+}
 
 
 // TODO listen for bookmarks.onCreated and bookmarks.onRemoved once Bug 1221764 lands
 
-// listen to tab URL changes
-browser.tabs.onUpdated.addListener(updateActiveTab);
-
-// listen to tab switching
-browser.tabs.onActivated.addListener(updateActiveTab);
 
 // update when the extension loads initially
 init();

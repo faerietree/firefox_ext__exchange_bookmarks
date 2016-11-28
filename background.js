@@ -2,7 +2,7 @@ var ghostifyBookmarks; ghostifyBookmarks = [undefined, undefined];
 var currentTab;
 var isHidden;
 
-var urlsToGhostify; urlsToGhostify = []; // TODO distinguish promise not fulfilled/arrived yet (undefined) and empty. 
+var urlsToGhostify; urlsToGhostify = []; // TODO distinguish promise not fulfilled/arrived yet (undefined) and empty.
 var urlGhosts; urlGhosts = [];
 
 function onError(error) // TODO Reuse in options.js using browser.extension.getBackgroundPage().onError.
@@ -10,13 +10,18 @@ function onError(error) // TODO Reuse in options.js using browser.extension.getB
   console.log(`Error: ${error}`);
 }
 
-// request and hopefully get the options:
-var gettingOptions = browser.storage.local.get("urlsToGhostify");
-gettingOptions.then(function(item) { urlsToGhostify = item.urlsToGhostify.split(/\s+/); } , onError);
 
-gettingOptions = browser.storage.local.get("urlGhosts");
-gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
+function init()
+{
+	// request and hopefully get the options:
+	var gettingOptions = browser.storage.local.get("urlsToGhostify");
+	gettingOptions.then(function(item) { urlsToGhostify = item.urlsToGhostify.split(/\s+/); } , onError);
 
+	gettingOptions = browser.storage.local.get("urlGhosts");
+	gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
+
+	updateActiveTab();
+}
 
 /*
  * Updates the browserAction icon to reflect whether the current page
@@ -39,6 +44,9 @@ function updateIcon() {
  * Toggle the bookmark on the current page.
  */
 function toggleBookmark() {
+
+  init();
+
   if (urlsToGhostify.length < 1 || urlGhosts.length < 1)
   {
     console.log('No options loaded yet or are empty.');
@@ -63,7 +71,7 @@ function toggleBookmark() {
           //ghostifyBookmarks[index].url = bookmark.url;
           isHidden = false;
           updateActiveTab();
-        });        
+        });
     } else {
         //var creating = browser.bookmarks.create({title: currentTab.title, url: currentTab.url});
         //creating.then(function(bookmark) {
@@ -187,4 +195,4 @@ browser.tabs.onUpdated.addListener(updateActiveTab);
 browser.tabs.onActivated.addListener(updateActiveTab);
 
 // update when the extension loads initially
-updateActiveTab();
+init();

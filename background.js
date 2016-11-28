@@ -20,6 +20,7 @@ function init()
 	gettingOptions = browser.storage.local.get("urlGhosts");
 	gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
 
+	// store the bookmarks that are to be ghostified:
 	updateGhostifyBookmarks();
 }
 
@@ -73,7 +74,7 @@ function toggleBookmark()
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
           isHidden = false;
-          updateGhostifyBookmarks();
+          updateIcon();
         });
     }
  	else
@@ -83,11 +84,13 @@ function toggleBookmark()
         //  currentBookmark = bookmark;
         //  updateIcon();
         //});
+        // TODO Swap the urls because else urls may get lost. May require ghostifyBookmarks extension and logic modification here.
+        // TODO Restore original URL assignment on options restore.
         var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlGhost});
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
           isHidden = true;
-          updateGhostifyBookmarks();
+          updateIcon();
         });
     }
   }
@@ -100,6 +103,8 @@ browser.browserAction.onClicked.addListener(toggleBookmark);
 
 /*
  * Update ghostifyBookmarks to prevent invalid URL data because the URLs have been swapped. 
+ * This depends upon a consistent reset of the URLs on options update.
+ * Else the queries will return more than one result even when URLs were uniquely bookmarked before.  
  */
 function updateGhostifyBookmarks()
 {
@@ -110,33 +115,12 @@ function updateGhostifyBookmarks()
         if (bookmarks.length < 1)
             return;
         ghostifyBookmarks[0] = bookmarks[0];
-        isHidden = false;
-        updateIcon();
       });
       var searching = browser.bookmarks.search({url: urlsToGhostify[1]});
       searching.then((bookmarks) => {
         if (bookmarks.length < 1)
             return;
         ghostifyBookmarks[1] = bookmarks[0];
-        isHidden = false;
-        updateIcon();
-      });
-      // if they are ghosts already:
-      var searching = browser.bookmarks.search({url: urlGhosts[0]});
-      searching.then((bookmarks) => {
-        if (bookmarks.length < 1)
-            return;
-        ghostifyBookmarks[0] = bookmarks[0];
-        isHidden = true;
-        updateIcon();
-      });
-      var searching = browser.bookmarks.search({url: urlGhosts[1]});
-      searching.then((bookmarks) => {
-        if (bookmarks.length < 1)
-            return;
-        ghostifyBookmarks[1] = bookmarks[0];
-        isHidden = true;
-        updateIcon();
       });
 
 }

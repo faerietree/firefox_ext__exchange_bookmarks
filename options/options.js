@@ -4,7 +4,29 @@ function saveOptions(e)
     urlsToGhostify: document.querySelector("#urlsToGhostify").value,
     urlGhosts: document.getElementById("urlGhosts").value
   });
+  // They are not always loaded. TODO If this fails, then listen to tab event which did work. 
+  notifyBackgroundScript();
+}
 
+
+function notifyBackgroundScript(e)
+{
+  var sending = browser.runtime.sendMessage({
+	  message: "urls_stored"  // TODO Use Enumeration
+  });
+  sending.then(onResponse, onError);
+}
+
+
+function onResponse(messsage)
+{
+	console.log("Message from the background script: " + message);
+}
+
+
+function onError(messsage)
+{
+	console.log(`Error: ${error}`);
 }
 
 

@@ -194,6 +194,18 @@ function updateGhostifyBookmarks()
 }
 
 
+
+function onMessage(request, sender, sendResponse)
+{
+	// ensure valid loaded ghostifyBookmarks in case the options are updated but toggle action is not triggered.
+	// TODO With the tab code to workaround not fulfilled promises or inavailability of bookmarks, this might be superfluous. 
+	// FIXME This message never arrives because the promise is never fulfilled. Just like with the bookmark promises.
+	if (request.message == "urls_stored")
+		init();
+	sendResponse({response: "Called init function. Thanks for the information."});
+}
+
+
 // TODO listen for bookmarks.onCreated and bookmarks.onRemoved once Bug 1221764 lands
 
 

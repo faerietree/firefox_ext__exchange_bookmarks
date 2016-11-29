@@ -21,6 +21,8 @@ function init()
 			var urlsToGhostifyCandidates = [];
 			urlsToGhostifyCandidates = item.urlsToGhostify.split(/\s+/); 
 			updateUrls(urlsToGhostify, urlsToGhostifyCandidates);
+			// store the bookmarks that are to be ghostified:
+			updateGhostifyBookmarks();
 		}
 		, onError
 	);
@@ -32,12 +34,12 @@ function init()
 			var urlGhostsCandidates = [];
 			urlGhostsCandidates = item.urlGhosts.split(/\s+/);
 			updateUrls(urlGhosts, urlGhostsCandidates);
+			// store the bookmarks that are to be ghostified:
+			updateGhostifyBookmarks();
 		}
  		, onError
 	);
 
-	// store the bookmarks that are to be ghostified:
-	updateGhostifyBookmarks();
 }
 
 

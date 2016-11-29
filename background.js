@@ -22,7 +22,6 @@ function init()
 		function(item) {
 			var urlsToGhostifyCandidates = [];
 			urlsToGhostifyCandidates = item.urlsToGhostify.trim().split(/\s+/); 
-			reassignBookmarkUrlsIfRequired(urlsToGhostify, urlsToGhostifyCandidates);
 			urlsToGhostify = urlsToGhostifyCandidates;
 			// store the bookmarks that are to be ghostified:
 			updateGhostifyBookmarks();
@@ -36,7 +35,6 @@ function init()
 			/*alert(uneval(item));*/
 			var urlGhostsCandidates = [];
 			urlGhostsCandidates = item.urlGhosts.trim().split(/\s+/);
-			reassignBookmarkUrlsIfRequired(urlGhosts, urlGhostsCandidates);
 			urlGhosts = urlGhostsCandidates;
 			// store the bookmarks that are to be ghostified:
 			updateGhostBookmarks();
@@ -56,55 +54,6 @@ function init()
 
 }
 
-
-function reassignBookmarkUrlsIfRequired(urls, urlsCandidates)
-{
-	// On the first execution the options are loaded but no bookmarks yet.
-	if (!ghostifyBookmarks[0])
-	{
-		// No reassign / reset of URLs required on first execution.
-		return ;
-	}
-
-	var needReassignOriginalUrls = false;
-	// Even when the first entries remain equal, a reset/reassignment is required to avoid mixed results due to toggle:
-	if (urlsCandidates.length != urls.length)
-		needReassignOriginalUrls = true;
-	else // equal length arrays:
-		// TODO Check if the order has changed!
-		// FIXME current bug because it changes the mapping and before that takes effect, one better reset!
-		for (var i = 0; i < urlsCandidates.length; ++i)
-			if (urlsCandidates[i] != urls[i])
-				needReassignOriginalUrls = true;
-
-	if (needReassignOriginalUrls)
-		reassignOriginalUrls();
-
-	// now it is safe / consistent to overwrite the global array:
-	return ;
-
-}
-
-
-function reassignOriginalUrls()
-{
-	// Note: Currently only bookmarks with urls within urlsToGhostify are modified/updated
-	//  and hence only those need to be reset. TODO When a real URL exchange is performed
-	//  then both need parties be updated. 
-	for (var i = 0; i < ghostifyBookmarks.length; ++i)
-	{
-		var bookmark; bookmark = ghostifyBookmarks[i];
-		var urlToGhostify; urlToGhostify = urlsToGhostify[i];
-		if (bookmark.url != urlToGhostify)
-		{
-			var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
-			updating.then(function(bookmark) {
-				unhide();
-			});
-		}
-	}
-
-}
 
 
 function updateIcon()
@@ -164,20 +113,18 @@ function toggleBookmark()
     return;
   }
 
-  for (var index = 0; index < ghostifyBookmarks.length; ++index)
+  for (var index = 0; index < urlsToGhostify.length; ++index)
   {
     var bookmark = ghostifyBookmarks[index];
     var ghostBookmark = ghostBookmarks[index];
     var urlToGhostify = urlsToGhostify[index];
     var urlGhost = urlGhosts[index];
-    // The following is kept as feedback for when the bookmark data is loaded.
+    // The following is kept as feedback for when the bookmark data is loaded. (Ghost bookmarks must not necessarily exist.)
     if (!bookmark)
     {
-        console.log("Error: No bookmark loaded: " + bookmark + "ghostifyBookmarks: " + ghostifyBookmarks + " . Loading (again) ...");
-        updateGhostifyBookmarks();
+        console.log("Error: No bookmark loaded: " + bookmark + "ghostifyBookmarks: " + ghostifyBookmarks);
     }
     //if (bookmark.url != urlToGhostify)
-    // TODO Swap bookmarks consistently, i.e. all data instead of only URL. (not the reference to maintain toolbar position)
     // Swap the urls because else urls may get lost.
     if (isHidden)
     {
@@ -185,13 +132,11 @@ function toggleBookmark()
         //browser.bookmarks.remove(currentBookmark.id);
         var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
         updating.then(function(bookmark) {
-          //ghostifyBookmarks[index].url = bookmark.url;
-		  unhide();
+		  console.log("isHidden: " + isHidden + " was: true => did reset bookmark: " + uneval(bookmark));
         });
         var updating = browser.bookmarks.update(ghostBookmark.id, {title: ghostBookmark.title, url: urlGhost});
         updating.then(function(bookmark) {
-          //ghostBookmarks[index].url = ghostBookmark.url;
-		  unhide();
+		  console.log("isHidden: " + isHidden + " was: true => did reset ghost bookmark: " + uneval(ghostBookmark));
         });
     }
  	else // not hidden
@@ -204,30 +149,26 @@ function toggleBookmark()
         var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: urlGhost});
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
-          hide();
+		  console.log("isHidden: " + isHidden + " was: false => did ghostify bookmark: " + uneval(bookmark));
         });
         var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: urlToGhostify});
         updating.then(function(bookmark) {
-          //ghostBookmarks[index].url = ghostBookmark.url;
-		  hide();
+		  console.log("isHidden: " + isHidden + " was: false => did unghostify ghost bookmark: " + uneval(ghostBookmark));
         });
     }
   }
+
+    // Toggle hidden flag no matter when the promises are fulfilled: (Prior to that, the promises changed it
+    //  and the next loop iteration reacted but should not!)
+    isHidden = !isHidden;
 
 
 }
 
 browser.browserAction.onClicked.addListener(toggleBookmark);
 
-/*
- * Update ghostifyBookmarks to prevent invalid URL data because the URLs have been swapped. 
- * This depends upon a consistent reset of the URLs on options update.
- * Else the queries will/could return more than one result even when URLs were uniquely bookmarked before.  
- */
 function updateGhostifyBookmarks()
 {
-
-      // no ghosts:
       for (var i = 0; i < urlsToGhostify.length; ++i)
       {
 	      var searching = browser.bookmarks.search({url: urlsToGhostify[i]});

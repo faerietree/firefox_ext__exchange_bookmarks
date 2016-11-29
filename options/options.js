@@ -5,7 +5,7 @@ function saveOptions(e)
     ,urlGhosts: document.getElementById("urlGhosts").value
     ,isHidden: document.getElementById("isHidden").checked
   });
-  // They are not always loaded. TODO If this fails, then listen to tab event which did work. 
+  // They are not always loaded. TODO If this fails, then listen to tab event which did work.
   notifyBackgroundScript();
 }
 
@@ -43,13 +43,13 @@ function restoreOptions()
   {
     document.querySelector("#urlGhosts").value
          = result.urlGhosts || "http://burgauwka.duckdns.org:8014/control/userimage.html http://burgauwka.duckdns.org:8015/control/userimage.html";
-  
+
   }
   function setCurrentChoiceIsHidden(result)
   {
     document.querySelector("#isHidden").checked
          = result.isHidden || false;
-  
+
   }
 
   function onError(error)

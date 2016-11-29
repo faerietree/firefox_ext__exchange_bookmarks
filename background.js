@@ -1,5 +1,5 @@
-var ghostifyBookmarks; ghostifyBookmarks = [];
-var ghostBookmarks; ghostBookmarks = [];
+var ghostifyBookmarks;
+var ghostBookmarks;
 
 var currentTab;
 var isHidden;
@@ -16,6 +16,7 @@ function onError(error) // TODO Reuse in options.js using browser.extension.getB
 
 function init()
 {
+
 	// request and hopefully get the options:
 	var gettingOptions = browser.storage.local.get("urlsToGhostify");
 	gettingOptions.then(
@@ -122,7 +123,9 @@ function toggleBookmark()
     // The following is kept as feedback for when the bookmark data is loaded. (Ghost bookmarks must not necessarily exist.)
     if (!bookmark)
     {
-      console.log("Error: No bookmark loaded: " + bookmark + " ghostifyBookmarks: " + uneval(ghostifyBookmarks);
+      console.log("Error: No bookmark loaded: " + bookmark);
+      console.log("ghostifyBookmarks: " + uneval(ghostifyBookmarks) + "ghostBookmarks: " + uneval(ghostBookmarks));
+      console.log("urlsToGhostify: " + uneval(urlsToGhostify) + " urlGhosts: " + uneval(urlGhosts));
       return;
     }
 
@@ -160,24 +163,48 @@ function toggleBookmark()
 
 }
 
+
 browser.browserAction.onClicked.addListener(toggleBookmark);
+
+function loadGhostifyBookmarks(arr)
+{
+  // serial asynchronous call, see stackoverflow.com/questions/24660096/correct-way-to-write-loops-for-promise#answer-24985483
+  return arr.reduce(function(promise, arr_entry) {
+    return promise.then(function() {
+      return updateGhostifyBookmark(arr_entry);
+    });
+  }, Promise.resolve());
+}
+
 
 function updateGhostifyBookmarks()
 {
-      for (var i = 0; i < urlsToGhostify.length; ++i)
-      {
-	      var searching = browser.bookmarks.search({url: urlsToGhostify[i]});
-	      searching.then((bookmarks) => {
-	        if (bookmarks.length < 1)
-	            return;
-	        ghostifyBookmarks[i] = bookmarks[0];
-	      });
-      }
+  // Without this line, it leads to TypeError: ghostifyBookmarks[index] = bookmarks[0]; in updateGhostifyBookmark:
+  ghostifyBookmarks = [];
+  var indices = [];
+  for (var i = 0; i < urlsToGhostify.length; ++i)
+    indices[i] = i;
+  loadGhostifyBookmarks(indices).then(function() {
+    console.log("Loaded bookmarks for " + urlsToGhostify);
+  });
+}
+
+
+function updateGhostifyBookmark(index)
+{
+  var searching = browser.bookmarks.search({url: urlsToGhostify[index]});
+  searching.then((bookmarks) => {
+    console.log(index + ": updateGhostifyBookmarks promise fulfilled: " + uneval(bookmarks));
+    if (bookmarks.length < 1)
+      return;
+    ghostifyBookmarks[index] = bookmarks[0];
+  }, onError);
 }
 
 
 function updateGhostBookmarks()
 {
+  ghostBookmarks = [];
 
       // ghosts:
       for (var i = 0; i < urlGhosts.length; ++i)
@@ -186,8 +213,9 @@ function updateGhostBookmarks()
 	      searching.then((bookmarks) => {
 	        if (bookmarks.length < 1)
 	            return;
-	        ghostBookmarks[i] = bookmarks[0];
-	      });
+          console.log(i + ": <- problem!! correct: " + ghostBookmarks.length + ": updateGhostBookmarks promise fulfilled: " + uneval(bookmarks));
+	        ghostBookmarks[ghostBookmarks.length] = bookmarks[0];
+	      }, onError);
       }
 
 }

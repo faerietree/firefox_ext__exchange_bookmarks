@@ -5,6 +5,7 @@ var isHidden;
 var urlsToGhostify; urlsToGhostify = []; // TODO distinguish promise not fulfilled/arrived yet (undefined) and empty.
 var urlGhosts; urlGhosts = [];
 
+
 function onError(error) // TODO Reuse in options.js using browser.extension.getBackgroundPage().onError.
 {
   console.log(`Error: ${error}`);
@@ -15,13 +16,80 @@ function init()
 {
 	// request and hopefully get the options:
 	var gettingOptions = browser.storage.local.get("urlsToGhostify");
-	gettingOptions.then(function(item) { urlsToGhostify = item.urlsToGhostify.split(/\s+/); } , onError);
+	gettingOptions.then(
+		function(item) {
+			var urlsToGhostifyCandidates = [];
+			urlsToGhostifyCandidates = item.urlsToGhostify.split(/\s+/); 
+			updateUrls(urlsToGhostify, urlsToGhostifyCandidates);
+		}
+		, onError
+	);
 
 	gettingOptions = browser.storage.local.get("urlGhosts");
-	gettingOptions.then(function(item) { /*alert(uneval(item));*/ urlGhosts = item.urlGhosts.split(/\s+/); } , onError);
+	gettingOptions.then(
+		function(item) {
+			/*alert(uneval(item));*/
+			var urlGhostsCandidates = [];
+			urlGhostsCandidates = item.urlGhosts.split(/\s+/);
+			updateUrls(urlGhosts, urlGhostsCandidates);
+		}
+ 		, onError
+	);
 
 	// store the bookmarks that are to be ghostified:
 	updateGhostifyBookmarks();
+}
+
+
+function updateUrls(urls, urlsCandidates)
+{
+	// On the first execution the options are loaded but no bookmarks yet.
+	if (!ghostifyBookmarks[0])
+	{
+		// No reassign / reset of URLs required on first execution.
+		urls = urlsCandidates;
+		return ;
+	}
+
+	var needReassignOriginalUrls = false;
+	// Even when the first entries remain equal, a reset/reassignment is required to avoid mixed results due to toggle:
+	if (urlsCandidates.length != urls.length)
+		needReassignOriginalUrls = true;
+	else // equal length arrays:
+		// TODO Check if the order has changed!
+		// FIXME current bug because it changes the mapping and before that takes effect, one better reset!
+		for (var i = 0; i < urlsCandiates.length; ++i)
+			if (urlsCandidates[i] != urls[i])
+				needReassignOriginalUrls = true;
+
+	if (needReassignOriginalUrls)
+		reassignOriginalUrls();
+
+	// now it is safe / consistent to overwrite the global array:
+	urls = urlsCandidates;
+
+}
+
+
+function reassignOriginalUrls()
+{
+	// Note: Currently only bookmarks with urls within urlsToGhostify are modified/updated
+	//  and hence only those need to be reset. TODO When a real URL exchange is performed
+	//  then both need parties be updated. 
+	for (var i = 0; i < ghostifyBookmarks.length; ++i)
+	{
+		var bookmark; bookmark = ghostifyBookmarks[i];
+		var urlToGhostify; urlToGhostify = urlsToGhostify[i];
+		if (bookmark.url != urlToGhostify)
+		{
+			var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
+			updating.then(function(bookmark) {
+				isHidden = false;
+				updateIcon();
+			});
+		}
+	}
+
 }
 
 /*

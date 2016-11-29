@@ -1,8 +1,9 @@
 function saveOptions(e)
 {
   browser.storage.local.set({
-    urlsToGhostify: document.querySelector("#urlsToGhostify").value,
-    urlGhosts: document.getElementById("urlGhosts").value
+    urlsToGhostify: document.querySelector("#urlsToGhostify").value
+    ,urlGhosts: document.getElementById("urlGhosts").value
+    ,isHidden: document.getElementById("isHidden").checked
   });
   // They are not always loaded. TODO If this fails, then listen to tab event which did work. 
   notifyBackgroundScript();
@@ -37,9 +38,17 @@ function restoreOptions()
   {
     document.querySelector("#urlsToGhostify").value
          = result.urlsToGhostify || "http://burgauwka.duckdns.org:8011/control/userimage.html http://burgauwka.duckdns.org:8012/control/userimage.html";
-
+  }
+  function setCurrentChoiceUrlGhosts(result)
+  {
     document.querySelector("#urlGhosts").value
          = result.urlGhosts || "http://burgauwka.duckdns.org:8014/control/userimage.html http://burgauwka.duckdns.org:8015/control/userimage.html";
+  
+  }
+  function setCurrentChoiceIsHidden(result)
+  {
+    document.querySelector("#isHidden").checked
+         = result.isHidden || false;
   
   }
 
@@ -50,6 +59,12 @@ function restoreOptions()
 
   var getting = browser.storage.local.get("urlsToGhostify");
   getting.then(setCurrentChoice, onError);
+
+  getting = browser.storage.local.get("urlGhosts");
+  getting.then(setCurrentChoiceUrlGhosts, onError);
+
+  getting = browser.storage.local.get("isHidden");
+  getting.then(setCurrentChoiceIsHidden, onError);
 
 }
 

@@ -1,4 +1,6 @@
-var ghostifyBookmarks; ghostifyBookmarks = [undefined, undefined];
+var ghostifyBookmarks; ghostifyBookmarks = [];
+var ghostBookmarks; ghostBookmarks = [];
+
 var currentTab;
 var isHidden;
 
@@ -19,7 +21,7 @@ function init()
 	gettingOptions.then(
 		function(item) {
 			var urlsToGhostifyCandidates = [];
-			urlsToGhostifyCandidates = item.urlsToGhostify.split(/\s+/); 
+			urlsToGhostifyCandidates = item.urlsToGhostify.trim().split(/\s+/); 
 			reassignBookmarkUrlsIfRequired(urlsToGhostify, urlsToGhostifyCandidates);
 			urlsToGhostify = urlsToGhostifyCandidates;
 			// store the bookmarks that are to be ghostified:
@@ -33,11 +35,21 @@ function init()
 		function(item) {
 			/*alert(uneval(item));*/
 			var urlGhostsCandidates = [];
-			urlGhostsCandidates = item.urlGhosts.split(/\s+/);
+			urlGhostsCandidates = item.urlGhosts.trim().split(/\s+/);
 			reassignBookmarkUrlsIfRequired(urlGhosts, urlGhostsCandidates);
 			urlGhosts = urlGhostsCandidates;
 			// store the bookmarks that are to be ghostified:
-			updateGhostifyBookmarks();
+			updateGhostBookmarks();
+		}
+ 		, onError
+	);
+
+	gettingOptions = browser.storage.local.get("isHidden");
+	gettingOptions.then(
+		function(item) {
+			/*alert(uneval(item));*/
+			// store the bookmarks that are to be ghostified:
+			isHidden = item.isHidden;
 		}
  		, onError
 	);
@@ -61,7 +73,7 @@ function reassignBookmarkUrlsIfRequired(urls, urlsCandidates)
 	else // equal length arrays:
 		// TODO Check if the order has changed!
 		// FIXME current bug because it changes the mapping and before that takes effect, one better reset!
-		for (var i = 0; i < urlsCandiates.length; ++i)
+		for (var i = 0; i < urlsCandidates.length; ++i)
 			if (urlsCandidates[i] != urls[i])
 				needReassignOriginalUrls = true;
 
@@ -87,18 +99,14 @@ function reassignOriginalUrls()
 		{
 			var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
 			updating.then(function(bookmark) {
-				isHidden = false;
-				updateIcon();
+				unhide();
 			});
 		}
 	}
 
 }
 
-/*
- * Updates the browserAction icon to reflect whether the current page
- * is already bookmarked.
- */
+
 function updateIcon()
 {
   browser.browserAction.setIcon({
@@ -113,12 +121,40 @@ function updateIcon()
   });
 }
 
+
+function hide()
+{
+	
+  isHidden = true;
+  // Required because it is unknown when the browser terminates/resets and persistence is desired.
+  browser.storage.local.set({
+    isHidden: true 
+  });
+				updateIcon();
+
+}
+
+
+function unhide()
+{
+	
+  isHidden = false;
+  // Required because it is unknown when the browser terminates/resets and persistence is desired.
+  browser.storage.local.set({
+    isHidden: false 
+  });
+				updateIcon();
+
+}
+
+
 /*
  * Toggle the bookmark on the current page.
  */
 function toggleBookmark()
 {
 
+  // Init also sets isHidden to the current value (loading from options storage).
   init();
 
   if (urlsToGhostify.length < 1 || urlGhosts.length < 1)
@@ -131,37 +167,49 @@ function toggleBookmark()
   for (var index = 0; index < ghostifyBookmarks.length; ++index)
   {
     var bookmark = ghostifyBookmarks[index];
+    var ghostBookmark = ghostBookmarks[index];
     var urlToGhostify = urlsToGhostify[index];
     var urlGhost = urlGhosts[index];
+    // The following is kept as feedback for when the bookmark data is loaded.
     if (!bookmark)
     {
         console.log("Error: No bookmark loaded: " + bookmark + "ghostifyBookmarks: " + ghostifyBookmarks + " . Loading (again) ...");
         updateGhostifyBookmarks();
     }
-    if (bookmark.url != urlToGhostify)
+    //if (bookmark.url != urlToGhostify)
+    // TODO Swap bookmarks consistently, i.e. all data instead of only URL. (not the reference to maintain toolbar position)
+    // Swap the urls because else urls may get lost.
+    if (isHidden)
     {
+        // Swap/exchange bookmark data to original state:
         //browser.bookmarks.remove(currentBookmark.id);
         var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
-          isHidden = false;
-          updateIcon();
+		  unhide();
+        });
+        var updating = browser.bookmarks.update(ghostBookmark.id, {title: ghostBookmark.title, url: urlGhost});
+        updating.then(function(bookmark) {
+          //ghostBookmarks[index].url = ghostBookmark.url;
+		  unhide();
         });
     }
- 	else
+ 	else // not hidden
 	{
+		// Hide original data / swap bookmark data:
         //var creating = browser.bookmarks.create({title: currentTab.title, url: currentTab.url});
         //creating.then(function(bookmark) {
         //  currentBookmark = bookmark;
-        //  updateIcon();
         //});
-        // TODO Swap the urls because else urls may get lost. May require ghostifyBookmarks extension and logic modification here.
-        // TODO Restore original URL assignment on options restore.
-        var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlGhost});
+        var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: urlGhost});
         updating.then(function(bookmark) {
           //ghostifyBookmarks[index].url = bookmark.url;
-          isHidden = true;
-          updateIcon();
+          hide();
+        });
+        var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: urlToGhostify});
+        updating.then(function(bookmark) {
+          //ghostBookmarks[index].url = ghostBookmark.url;
+		  hide();
         });
     }
   }
@@ -171,28 +219,40 @@ function toggleBookmark()
 
 browser.browserAction.onClicked.addListener(toggleBookmark);
 
-
 /*
  * Update ghostifyBookmarks to prevent invalid URL data because the URLs have been swapped. 
  * This depends upon a consistent reset of the URLs on options update.
- * Else the queries will return more than one result even when URLs were uniquely bookmarked before.  
+ * Else the queries will/could return more than one result even when URLs were uniquely bookmarked before.  
  */
 function updateGhostifyBookmarks()
 {
 
       // no ghosts:
-      var searching = browser.bookmarks.search({url: urlsToGhostify[0]});
-      searching.then((bookmarks) => {
-        if (bookmarks.length < 1)
-            return;
-        ghostifyBookmarks[0] = bookmarks[0];
-      });
-      var searching = browser.bookmarks.search({url: urlsToGhostify[1]});
-      searching.then((bookmarks) => {
-        if (bookmarks.length < 1)
-            return;
-        ghostifyBookmarks[1] = bookmarks[0];
-      });
+      for (var i = 0; i < urlsToGhostify.length; ++i)
+      {
+	      var searching = browser.bookmarks.search({url: urlsToGhostify[i]});
+	      searching.then((bookmarks) => {
+	        if (bookmarks.length < 1)
+	            return;
+	        ghostifyBookmarks[i] = bookmarks[0];
+	      });
+      }
+}
+
+
+function updateGhostBookmarks()
+{
+
+      // ghosts:
+      for (var i = 0; i < urlGhosts.length; ++i)
+      {
+	      var searching = browser.bookmarks.search({url: urlGhosts[i]});
+	      searching.then((bookmarks) => {
+	        if (bookmarks.length < 1)
+	            return;
+	        ghostBookmarks[i] = bookmarks[0];
+	      });
+      }
 
 }
 

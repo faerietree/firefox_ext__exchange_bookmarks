@@ -64,7 +64,7 @@ function init()
 function updateIcon()
 {
   browser.browserAction.setIcon({
-    path: ghostifyBookmarks[0] && ghostifyBookmarks[1] && isHidden ? {
+    path: isHidden ? {
       19: "icons/star-filled-19.png",
       38: "icons/star-filled-38.png"
     } : {
@@ -162,7 +162,14 @@ function exchangeBookmarks()
 
   // Toggle hidden flag no matter when the promises are fulfilled: (Prior to that, the promises changed it
   //  and the next loop iteration reacted but should not!)
-  isHidden = !isHidden;
+  if (isHidden)
+  {
+     unhide();
+  }
+  else
+  {
+     hide();
+  }
 
 
 }

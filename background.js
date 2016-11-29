@@ -122,45 +122,40 @@ function toggleBookmark()
     // The following is kept as feedback for when the bookmark data is loaded. (Ghost bookmarks must not necessarily exist.)
     if (!bookmark)
     {
-        console.log("Error: No bookmark loaded: " + bookmark + "ghostifyBookmarks: " + ghostifyBookmarks);
+      console.log("Error: No bookmark loaded: " + bookmark + " ghostifyBookmarks: " + uneval(ghostifyBookmarks);
+      return;
     }
-    //if (bookmark.url != urlToGhostify)
+
+    //if (!isHidden)
+    //{
+		  // Hide original data / swap bookmark data:
+    //    browser.bookmarks.remove(currentBookmark.id);
+    //}
+ 	//else // currently hidden => show
+	//{
+    //    // Recreate bookmark data according to original state:
+    //   var creating = browser.bookmarks.create({title: currentTab.title, url: currentTab.url});
+    //   creating.then(function(bookmark) {
+    //     currentBookmark = bookmark;
+    //   });
+	//	  console.log("isHidden: " + isHidden + " was: true => did reset bookmark: " + uneval(bookmark));
+	//	  console.log("isHidden: " + isHidden + " was: true => did reset ghost bookmark: " + uneval(ghostBookmark));
+    //}
+
     // Swap the urls because else urls may get lost.
-    if (isHidden)
-    {
-        // Swap/exchange bookmark data to original state:
-        //browser.bookmarks.remove(currentBookmark.id);
-        var updating = browser.bookmarks.update(bookmark.id, {title: bookmark.title, url: urlToGhostify});
-        updating.then(function(bookmark) {
-		  console.log("isHidden: " + isHidden + " was: true => did reset bookmark: " + uneval(bookmark));
-        });
-        var updating = browser.bookmarks.update(ghostBookmark.id, {title: ghostBookmark.title, url: urlGhost});
-        updating.then(function(bookmark) {
-		  console.log("isHidden: " + isHidden + " was: true => did reset ghost bookmark: " + uneval(ghostBookmark));
-        });
-    }
- 	else // not hidden
-	{
-		// Hide original data / swap bookmark data:
-        //var creating = browser.bookmarks.create({title: currentTab.title, url: currentTab.url});
-        //creating.then(function(bookmark) {
-        //  currentBookmark = bookmark;
-        //});
-        var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: urlGhost});
-        updating.then(function(bookmark) {
-          //ghostifyBookmarks[index].url = bookmark.url;
-		  console.log("isHidden: " + isHidden + " was: false => did ghostify bookmark: " + uneval(bookmark));
-        });
-        var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: urlToGhostify});
-        updating.then(function(bookmark) {
-		  console.log("isHidden: " + isHidden + " was: false => did unghostify ghost bookmark: " + uneval(ghostBookmark));
-        });
-    }
+    var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: urlGhost});
+    updating.then(function(b) {
+	    console.log("isHidden: " + isHidden + " toggle from " + uneval(bookmark) + " to " + uneval(b));
+    });
+    var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: urlToGhostify});
+    updating.then(function(b) {
+	    console.log("isHidden: " + isHidden + " toggle from " + uneval(ghostBookmark) + " to " + uneval(b));
+   });
   }
 
-    // Toggle hidden flag no matter when the promises are fulfilled: (Prior to that, the promises changed it
-    //  and the next loop iteration reacted but should not!)
-    isHidden = !isHidden;
+  // Toggle hidden flag no matter when the promises are fulfilled: (Prior to that, the promises changed it
+  //  and the next loop iteration reacted but should not!)
+  isHidden = !isHidden;
 
 
 }

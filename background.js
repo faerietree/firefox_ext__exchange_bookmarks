@@ -20,7 +20,8 @@ function init()
 		function(item) {
 			var urlsToGhostifyCandidates = [];
 			urlsToGhostifyCandidates = item.urlsToGhostify.split(/\s+/); 
-			updateUrls(urlsToGhostify, urlsToGhostifyCandidates);
+			reassignBookmarkUrlsIfRequired(urlsToGhostify, urlsToGhostifyCandidates);
+			urlsToGhostify = urlsToGhostifyCandidates;
 			// store the bookmarks that are to be ghostified:
 			updateGhostifyBookmarks();
 		}
@@ -33,7 +34,8 @@ function init()
 			/*alert(uneval(item));*/
 			var urlGhostsCandidates = [];
 			urlGhostsCandidates = item.urlGhosts.split(/\s+/);
-			updateUrls(urlGhosts, urlGhostsCandidates);
+			reassignBookmarkUrlsIfRequired(urlGhosts, urlGhostsCandidates);
+			urlGhosts = urlGhostsCandidates;
 			// store the bookmarks that are to be ghostified:
 			updateGhostifyBookmarks();
 		}
@@ -43,13 +45,12 @@ function init()
 }
 
 
-function updateUrls(urls, urlsCandidates)
+function reassignBookmarkUrlsIfRequired(urls, urlsCandidates)
 {
 	// On the first execution the options are loaded but no bookmarks yet.
 	if (!ghostifyBookmarks[0])
 	{
 		// No reassign / reset of URLs required on first execution.
-		urls = urlsCandidates;
 		return ;
 	}
 
@@ -68,7 +69,7 @@ function updateUrls(urls, urlsCandidates)
 		reassignOriginalUrls();
 
 	// now it is safe / consistent to overwrite the global array:
-	urls = urlsCandidates;
+	return ;
 
 }
 

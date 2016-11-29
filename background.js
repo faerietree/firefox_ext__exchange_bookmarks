@@ -18,41 +18,45 @@ function init()
 {
 
 	// request and hopefully get the options:
-	var gettingOptions = browser.storage.local.get("urlsToGhostify");
-	gettingOptions.then(
-		function(item) {
+	var gettingUrlsToGhostify = browser.storage.local.get("urlsToGhostify")
+    .then(
+		function(item1) {
 			var urlsToGhostifyCandidates = [];
-			urlsToGhostifyCandidates = item.urlsToGhostify.trim().split(/\s+/); 
+			urlsToGhostifyCandidates = item1.urlsToGhostify.trim().split(/\s+/); 
 			urlsToGhostify = urlsToGhostifyCandidates;
-			// store the bookmarks that are to be ghostified:
-			updateGhostifyBookmarks();
 		}
 		, onError
-	);
+	).then(updateGhostifyBookmarks, onError);
 
-	gettingOptions = browser.storage.local.get("urlGhosts");
-	gettingOptions.then(
-		function(item) {
-			/*alert(uneval(item));*/
+	var gettingUrlGhosts = browser.storage.local.get("urlGhosts")
+    .then(
+		function(item2) {
+			/*alert(uneval(item2));*/
 			var urlGhostsCandidates = [];
-			urlGhostsCandidates = item.urlGhosts.trim().split(/\s+/);
+			urlGhostsCandidates = item2.urlGhosts.trim().split(/\s+/);
 			urlGhosts = urlGhostsCandidates;
+		}
+ 		, onError
+	).then(updateGhostBookmarks, onError);
+
+	var gettingIsHidden = browser.storage.local.get("isHidden").then(
+		function(item3) {
+			/*alert(uneval(item3));*/
 			// store the bookmarks that are to be ghostified:
-			updateGhostBookmarks();
+			isHidden = item3.isHidden;
 		}
  		, onError
 	);
 
-	gettingOptions = browser.storage.local.get("isHidden");
-	gettingOptions.then(
-		function(item) {
-			/*alert(uneval(item));*/
-			// store the bookmarks that are to be ghostified:
-			isHidden = item.isHidden;
-		}
- 		, onError
-	);
-
+  Promise.all([gettingUrlsToGhostify, gettingUrlGhosts, gettingIsHidden])
+  // TODO Is this now giving the itemX or the result of the updateXBookmark promise?
+  //.spread(function(item1, item2, item3) {
+  //  console.log(item1, item2, item3);
+  //  swapBookmarks(item1, item2, item3);
+  //};
+    .then(
+      exchangeBookmarks, onError
+    );
 }
 
 
@@ -101,11 +105,9 @@ function unhide()
 /*
  * Toggle the bookmark on the current page.
  */
-function toggleBookmark()
+function exchangeBookmarks()
 {
 
-  // Init also sets isHidden to the current value (loading from options storage).
-  init();
 
   if (urlsToGhostify.length < 1 || urlGhosts.length < 1)
   {
@@ -146,13 +148,15 @@ function toggleBookmark()
     //}
 
     // Swap the urls because else urls may get lost.
+	  console.log("b: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
     var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: urlGhost});
     updating.then(function(b) {
-	    console.log("isHidden: " + isHidden + " toggle from " + uneval(bookmark) + " to " + uneval(b));
+	    console.log("[b] isHidden: " + isHidden + " toggle from (see approx. b) " + uneval(bookmark) + " to " + uneval(b));
     });
+	  console.log("gB: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
     var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: urlToGhostify});
     updating.then(function(b) {
-	    console.log("isHidden: " + isHidden + " toggle from " + uneval(ghostBookmark) + " to " + uneval(b));
+	    console.log("[gB] isHidden: " + isHidden + " toggle from (see approx. gB) " + uneval(ghostBookmark) + " to " + uneval(b));
    });
   }
 
@@ -164,7 +168,7 @@ function toggleBookmark()
 }
 
 
-browser.browserAction.onClicked.addListener(toggleBookmark);
+browser.browserAction.onClicked.addListener(init);
 
 function loadGhostifyBookmarks(arr)
 {
@@ -184,16 +188,16 @@ function updateGhostifyBookmarks()
   var indices = [];
   for (var i = 0; i < urlsToGhostify.length; ++i)
     indices[i] = i;
-  loadGhostifyBookmarks(indices).then(function() {
+  return loadGhostifyBookmarks(indices).then(function() {
     console.log("Loaded bookmarks for " + urlsToGhostify);
-  });
+  }, onError);
 }
 
 
 function updateGhostifyBookmark(index)
 {
   var searching = browser.bookmarks.search({url: urlsToGhostify[index]});
-  searching.then((bookmarks) => {
+  return searching.then((bookmarks) => {
     console.log(index + ": updateGhostifyBookmarks promise fulfilled: " + uneval(bookmarks));
     if (bookmarks.length < 1)
       return;
@@ -236,5 +240,3 @@ function onMessage(request, sender, sendResponse)
 // TODO listen for bookmarks.onCreated and bookmarks.onRemoved once Bug 1221764 lands
 
 
-// update when the extension loads initially
-init();

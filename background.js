@@ -121,7 +121,7 @@ function exchangeBookmarks()
 		var bookmark = ghostifyBookmarks[index];
 		var ghostBookmark = ghostBookmarks[index];
 		var urlToGhostify = urlsToGhostify[index];
-		var urlGhost = urlGhosts[index];
+		var urlGhost = urlGhosts[index] || "";  // replacing by no url is supported if bookmark validator not prevents.
 		// The following is kept as feedback for when the bookmark data is loaded. (Ghost bookmarks must not necessarily exist.)
 		if (!bookmark)
 		{

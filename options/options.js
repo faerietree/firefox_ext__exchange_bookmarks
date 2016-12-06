@@ -37,12 +37,12 @@ function restoreOptions()
 	function setCurrentChoice(result)
 	{
 		document.querySelector("#urlsToGhostify").value
-		 = result.urlsToGhostify || "http://burgauwka.duckdns.org:8011/control/userimage.html http://burgauwka.duckdns.org:8012/control/userimage.html";
+		 = result.urlsToGhostify || "";
 	}
 	function setCurrentChoiceUrlGhosts(result)
 	{
 		document.querySelector("#urlGhosts").value
-		 = result.urlGhosts || "http://burgauwka.duckdns.org:8014/control/userimage.html http://burgauwka.duckdns.org:8015/control/userimage.html";
+		 = result.urlGhosts || "";
 	}
 	function setCurrentChoiceIsHidden(result)
 	{

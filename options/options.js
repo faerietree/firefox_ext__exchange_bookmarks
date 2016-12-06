@@ -4,6 +4,7 @@ function saveOptions(e)
 		urlsToGhostify: document.querySelector("#urlsToGhostify").value
 		,urlGhosts: document.getElementById("urlGhosts").value
 		,isHidden: document.getElementById("isHidden").checked
+		,debug: document.getElementById("debug").checked
 	});
 	notifyBackgroundScript();
 }
@@ -48,6 +49,11 @@ function restoreOptions()
 		document.querySelector("#isHidden").checked
 		 = result.isHidden || false;
 	}
+	function setCurrentChoiceDebug(result)
+	{
+		document.querySelector("#debug").checked
+		 = result.debug || false;
+	}
 
 	function onError(error)
 	{
@@ -62,6 +68,9 @@ function restoreOptions()
 
 	getting = browser.storage.local.get("isHidden");
 	getting.then(setCurrentChoiceIsHidden, onError);
+
+	getting = browser.storage.local.get("debug");
+	getting.then(setCurrentChoiceDebug, onError);
 
 }
 

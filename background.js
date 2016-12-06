@@ -3,10 +3,17 @@ var ghostBookmarks;
 
 var currentTab;
 var isHidden;
+var _debug;
 
 var urlsToGhostify; urlsToGhostify = []; // TODO distinguish promise not fulfilled/arrived yet (undefined) and empty.
 var urlGhosts; urlGhosts = [];
 
+function debug(message)
+{
+	if (!_debug)
+		return
+	console.log(message);
+}
 
 function onError(error) // TODO Reuse in options.js using browser.extension.getBackgroundPage().onError.
 {
@@ -48,10 +55,18 @@ function init()
 		 , onError
 	);
 
+	var gettingDebug = browser.storage.local.get("debug").then(
+		function(item4) {
+			_debug = item4.debug;
+		}
+		 , onError
+	);
+
+
 	Promise.all([gettingUrlsToGhostify, gettingUrlGhosts, gettingIsHidden])
 		// TODO Is this now giving the itemX or the result of the updateXBookmark promise?
 		//.spread(function(item1, item2, item3) {
-		//	console.log(item1, item2, item3);
+		//	debug(item1, item2, item3);
 		//	swapBookmarks(item1, item2, item3);
 		//};
 		.then(
@@ -118,9 +133,9 @@ function swapBookmarks(urlsToGhostifyKeys)
 			// The following is kept as feedback for when the bookmark data is loaded. (Ghost bookmarks must not necessarily exist.)
 			if (!bookmark)
 			{
-				console.log("Error: No bookmark loaded: " + bookmark);
-				console.log("ghostifyBookmarks: " + uneval(ghostifyBookmarks) + "ghostBookmarks: " + uneval(ghostBookmarks));
-				console.log("urlsToGhostify: " + uneval(urlsToGhostify) + " urlGhosts: " + uneval(urlGhosts));
+				debug("Error: No bookmark loaded: " + bookmark);
+				debug("ghostifyBookmarks: " + uneval(ghostifyBookmarks) + "ghostBookmarks: " + uneval(ghostBookmarks));
+				debug("urlsToGhostify: " + uneval(urlsToGhostify) + " urlGhosts: " + uneval(urlGhosts));
 				return;
 			}
 			// URLs to replace a bookmark need not to have a bookmark set for it.
@@ -129,7 +144,7 @@ function swapBookmarks(urlsToGhostifyKeys)
 				//urlGhost is the correct term because a ghostBookmark is optional. ghostBookmarkUrl = ghostBookmark.url
 				var creating = browser.bookmarks.create({title: bookmark.title, url: urlGhost});
 				creating.then(function(ghostBookmarkNew) {
-					console.log("Created ghost bookmark as a copy of bookmark: " + ghostBookmarkNew);
+					debug("Created ghost bookmark as a copy of bookmark: " + ghostBookmarkNew);
 					swap_bookmarks(bookmark, ghostBookmarkNew);
 				});
 			}
@@ -153,7 +168,7 @@ function exchangeBookmarks()
 
 	if (urlsToGhostify.length < 1 || urlGhosts.length < 1)
 	{
-		console.log('No options loaded yet or are empty.');
+		debug('No options loaded yet or are empty.');
 		browser.runtime.openOptionsPage();
 		return;
 	}
@@ -165,7 +180,7 @@ function exchangeBookmarks()
 	}
 	//return
 	swapBookmarks(indices).then(function() {
-		console.log("Swapped bookmarks for indices " + indices);
+		debug("Swapped bookmarks for indices " + indices);
 	}, onError);
 
 	// Toggle hidden flag no matter when the promises are fulfilled: (Prior to that, the promises changed it
@@ -196,20 +211,20 @@ function swap_bookmarks(bookmark, ghostBookmark)
 		//creating.then(function(bookmark) {
 			//currentBookmark = bookmark;
 		//});
-		//console.log("isHidden: " + isHidden + " was: true => did reset bookmark: " + uneval(bookmark));
-		//console.log("isHidden: " + isHidden + " was: true => did reset ghost bookmark: " + uneval(ghostBookmark));
+		//debug("isHidden: " + isHidden + " was: true => did reset bookmark: " + uneval(bookmark));
+		//debug("isHidden: " + isHidden + " was: true => did reset ghost bookmark: " + uneval(ghostBookmark));
 	//}
 
 	// Swap the urls because else urls may get lost.
-	console.log("b: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
+	debug("b: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
 	var updating = browser.bookmarks.update(bookmark.id, {title: ghostBookmark.title, url: ghostBookmark.url});
 	updating.then(function(b) {
-		console.log("[b] isHidden: " + isHidden + " toggle from (see approx. b) " + uneval(bookmark) + " to " + uneval(b));
+		debug("[b] isHidden: " + isHidden + " toggle from (see approx. b) " + uneval(bookmark) + " to " + uneval(b));
 	});
-	console.log("gB: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
+	debug("gB: isHidden: " + isHidden + " toggle from " + uneval(bookmark));
 	var updating = browser.bookmarks.update(ghostBookmark.id, {title: bookmark.title, url: bookmark.url});
 	updating.then(function(b) {
-		console.log("[gB] isHidden: " + isHidden + " toggle from (see approx. gB) " + uneval(ghostBookmark) + " to " + uneval(b));
+		debug("[gB] isHidden: " + isHidden + " toggle from (see approx. gB) " + uneval(ghostBookmark) + " to " + uneval(b));
 	});
 
 }
@@ -236,7 +251,7 @@ function updateGhostifyBookmarks()
 	for (var i = 0; i < urlsToGhostify.length; ++i)
 		indices[i] = i;
 	return loadGhostifyBookmarks(indices).then(function() {
-		console.log("Loaded bookmarks for " + urlsToGhostify);
+		debug("Loaded bookmarks for " + urlsToGhostify);
 	}, onError);
 }
 
@@ -245,7 +260,7 @@ function updateGhostifyBookmark(index)
 {
 	var searching = browser.bookmarks.search({url: urlsToGhostify[index]});
 	return searching.then((bookmarks) => {
-		console.log(index + ": updateGhostifyBookmarks promise fulfilled: " + uneval(bookmarks));
+		debug(index + ": updateGhostifyBookmarks promise fulfilled: " + uneval(bookmarks));
 		if (bookmarks.length < 1)
 			return;
 		ghostifyBookmarks[index] = bookmarks[0];
@@ -264,7 +279,7 @@ function updateGhostBookmarks()
 		searching.then((bookmarks) => {
 			if (bookmarks.length < 1)
 				return;
-			console.log(i + ": <- problem!! correct: " + ghostBookmarks.length + ": updateGhostBookmarks promise fulfilled: " + uneval(bookmarks));
+			debug(i + ": <- problem!! correct: " + ghostBookmarks.length + ": updateGhostBookmarks promise fulfilled: " + uneval(bookmarks));
 			ghostBookmarks[ghostBookmarks.length] = bookmarks[0];
 		}, onError);
 	}

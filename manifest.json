@@ -26,9 +26,8 @@
     "page": "options/options.html"
   },
   "permissions": [
-    "bookmarks",
-    "storage",
-    "tabs"
+    "bookmarks"
+    ,"storage"
   ],
   "version": "5.0"
 }
